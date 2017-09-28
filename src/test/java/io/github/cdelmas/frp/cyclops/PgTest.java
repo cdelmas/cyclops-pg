@@ -1,6 +1,7 @@
 package io.github.cdelmas.frp.cyclops;
 
 import com.aol.cyclops2.data.collections.extensions.CollectionX;
+import cyclops.async.Future;
 import cyclops.collections.mutable.ListX;
 import cyclops.companion.CompletableFutures;
 import cyclops.companion.Monoids;
@@ -8,14 +9,26 @@ import cyclops.companion.Optionals;
 import cyclops.control.Eval;
 import cyclops.control.Maybe;
 import cyclops.control.Try;
-import cyclops.monads.Witness;
-import cyclops.monads.WitnessType;
+import cyclops.control.Xor;
+import cyclops.control.lazy.Either;
+import cyclops.function.Reducer;
 import org.junit.jupiter.api.Test;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+
+import static cyclops.function.Lambda.λ;
+import static java.util.function.Function.identity;
 
 public class PgTest {
+
+    public static int inc(int i) {
+        System.out.println("incrementing i=" + i);
+        return i + 1;
+    }
 
     @Test
     public void aboutCollections() {
@@ -98,18 +111,35 @@ public class PgTest {
         Eval.later(() -> 42); // on use, once and for all
         Eval.always(() -> 42); // on each use of data
 
-        Try.withCatch()
+        Function<RuntimeException, String> fallback = __ -> "42";
+        /*Try<String, RuntimeException> triedHard = Try.withCatch(this::aMethodThatThrowsAnException)
+                .recover(fallback);
+        triedHard.map(String::toUpperCase)
+                .forEach(System.out::println);*/
+        Try.catchExceptions(Exception.class)
+                .init(() -> new BufferedReader(new FileReader("/tmp/toto")))
+                .tryWithResources(BufferedReader::lines)
+                .reduce(Monoids.combineStream())
+                .forEach(System.out::println);
 
-        // Maybe
-        // Eval
-        // Try
-        // FutureW
+        // Either
+        Either<String, Integer> iOrS = Either.rightEval(Eval.later(() -> 42));
+        iOrS.map(λ(Integer::sum).apply(12)).forEach(System.out::println);
+
+        // Xor
+        Xor<String, Integer> xor = Xor.primary(42);
+        xor.map(λ(Integer::divideUnsigned).apply(5)).forEach(System.out::println);
+
+        // Future
+        System.out.println(Future.sequence(ListX.of(Future.ofResult(42), Future.ofResult(17), Future.of(() -> 35)))
+                .mapReduce(Reducer.fromMonoid(Monoids.listXConcat(), identity())));
+
         // transformers
+        
     }
 
-    public static int inc(int i) {
-        System.out.println("incrementing i=" + i);
-        return i + 1;
+    private String aMethodThatThrowsAnException() {
+        throw new RuntimeException("You cannot say I didn't tell you!");
     }
 
     public void hkt() {
