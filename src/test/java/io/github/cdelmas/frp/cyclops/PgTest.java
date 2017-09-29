@@ -11,7 +11,10 @@ import cyclops.control.Maybe;
 import cyclops.control.Try;
 import cyclops.control.Xor;
 import cyclops.control.lazy.Either;
+import cyclops.function.Fn1;
+import cyclops.function.Lambda;
 import cyclops.function.Reducer;
+import lombok.val;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -20,6 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+import static cyclops.function.Lambda.l1;
 import static cyclops.function.Lambda.λ;
 import static java.util.function.Function.identity;
 
@@ -111,11 +115,10 @@ public class PgTest {
         Eval.later(() -> 42); // on use, once and for all
         Eval.always(() -> 42); // on each use of data
 
-        Function<RuntimeException, String> fallback = __ -> "42";
-        /*Try<String, RuntimeException> triedHard = Try.withCatch(this::aMethodThatThrowsAnException)
-                .recover(fallback);
-        triedHard.map(String::toUpperCase)
-                .forEach(System.out::println);*/
+        Try.withCatch(this::aMethodThatThrowsAnException)
+                .recover(() -> "42")
+                .map(String::toUpperCase)
+                .forEach(System.out::println);
         Try.catchExceptions(Exception.class)
                 .init(() -> new BufferedReader(new FileReader("/tmp/toto")))
                 .tryWithResources(BufferedReader::lines)
@@ -135,7 +138,7 @@ public class PgTest {
                 .mapReduce(Reducer.fromMonoid(Monoids.listXConcat(), identity())));
 
         // transformers
-        
+
     }
 
     private String aMethodThatThrowsAnException() {
