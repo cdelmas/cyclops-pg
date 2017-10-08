@@ -1,6 +1,7 @@
 package io.github.cdelmas.frp.cyclops;
 
 import com.aol.cyclops2.data.collections.extensions.CollectionX;
+import com.aol.cyclops2.hkt.Higher;
 import cyclops.async.Future;
 import cyclops.collections.mutable.ListX;
 import cyclops.companion.CompletableFutures;
@@ -12,18 +13,21 @@ import cyclops.control.Try;
 import cyclops.control.Xor;
 import cyclops.control.lazy.Either;
 import cyclops.function.Fn1;
-import cyclops.function.Lambda;
 import cyclops.function.Reducer;
-import lombok.val;
+import cyclops.monads.AnyM;
+import cyclops.monads.Witness;
+import cyclops.monads.transformers.MaybeT;
+import cyclops.typeclasses.Kleisli;
+import cyclops.typeclasses.functor.Functor;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
-import static cyclops.function.Lambda.l1;
+import static cyclops.control.Maybe.just;
+import static cyclops.control.Maybe.maybe;
 import static cyclops.function.Lambda.λ;
 import static java.util.function.Function.identity;
 
@@ -101,7 +105,7 @@ public class PgTest {
     }
 
     @Test
-    public void additions() {
+    public void monads() {
         int value = 42;
         System.out.println("Optional is eager");
         Optional.of(value).map(PgTest::inc);
@@ -137,8 +141,36 @@ public class PgTest {
         System.out.println(Future.sequence(ListX.of(Future.ofResult(42), Future.ofResult(17), Future.of(() -> 35)))
                 .mapReduce(Reducer.fromMonoid(Monoids.listXConcat(), identity())));
 
-        // transformers
 
+        Future<Maybe<String>> delivery =
+                Future.of(just(42))
+                        .map(this::findUser)
+                        .flatMap(opt -> Future.ofResult(opt.flatMap(this::findAddress)))
+                        .flatMap(opt -> Future.ofResult(opt.flatMap(this::sendParcel)));
+        delivery.get().forEach(System.out::println);
+
+        // transformers
+        MaybeT.fromAnyM(AnyM.fromFuture(Future.of(just(42))))
+                .flatMapT(wrapT(this::findUser))
+                .flatMapT(wrapT(this::findAddress))
+                .flatMapT(wrapT(this::sendParcel))
+                .forEach(System.out::println);
+    }
+
+    private <T> Fn1<T, MaybeT<Witness.future, String>> wrapT(Fn1<T, Maybe<String>> f) {
+        return i -> MaybeT.fromAnyM(AnyM.fromFuture(Future.of(f.apply(i))));
+    }
+
+    private Maybe<String> sendParcel(String s) {
+        return just("parcel sent to " + s);
+    }
+
+    private Maybe<String> findAddress(String name) {
+        return just("1337 n00b Road, Geek City");
+    }
+
+    private Maybe<String> findUser(Integer id) {
+        return Maybe.of("User#" + id);
     }
 
     private String aMethodThatThrowsAnException() {
@@ -146,7 +178,10 @@ public class PgTest {
     }
 
     public void hkt() {
-        // HKT examples
+        Kleisli<Witness.maybe, String, String> k1 = Kleisli.of(Maybe.Instances.monad(), this::sendParcel);
+        Kleisli<Witness.maybe, String, String> k2 = Kleisli.of(Maybe.Instances.monad(), this::findAddress);
+        Maybe<String> maybeAString = Maybe.narrowK(k2.then(k1).apply("Toto"));
+        System.out.println(maybeAString.orElse("Youpi"));
     }
 
     public void reactive() {
