@@ -18,16 +18,19 @@ import cyclops.monads.AnyM;
 import cyclops.monads.Witness;
 import cyclops.monads.transformers.MaybeT;
 import cyclops.typeclasses.Kleisli;
-import cyclops.typeclasses.functor.Functor;
+import cyclops.typeclasses.free.Coyoneda;
+import cyclops.typeclasses.free.Free;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static cyclops.control.Maybe.just;
-import static cyclops.control.Maybe.maybe;
 import static cyclops.function.Lambda.λ;
 import static java.util.function.Function.identity;
 
@@ -182,9 +185,94 @@ public class PgTest {
         Kleisli<Witness.maybe, String, String> k2 = Kleisli.of(Maybe.Instances.monad(), this::findAddress);
         Maybe<String> maybeAString = Maybe.narrowK(k2.then(k1).apply("Toto"));
         System.out.println(maybeAString.orElse("Youpi"));
+
+        // free monad
+        Request<Integer> ri = new Re
+        Coyoneda.of(c -> 42, Higher<F, T> higher);
+
     }
 
     public void reactive() {
         // examples of reactive programming
     }
+
+    // free monad example
+
+    interface Service<T> {
+
+    }
+
+    @AllArgsConstructor
+    final static class Tweet {
+        @Getter
+        private Integer userId;
+        @Getter
+        private String msg;
+    }
+
+    @AllArgsConstructor
+    final static class User {
+        @Getter
+        private Integer userId;
+        @Getter
+        private String name;
+        @Getter
+        private String photo;
+    }
+
+    @AllArgsConstructor
+    final static class GetTweets implements Service<List<Tweet>> {
+        @Getter
+        private Integer userId;
+    }
+
+    @AllArgsConstructor
+    final static class GetUserName implements Service<String> {
+        @Getter
+        private Integer userId;
+    }
+
+    @AllArgsConstructor
+    final static class GetUserPhoto implements Service<String> {
+        @Getter
+        private Integer userId;
+    }
+
+    abstract static class Request<T> implements Higher<Request.μ, T> {
+
+        static class μ {
+        }
+
+        static <T> Request<T> narrowK(Higher<Request.μ, T> higher) {
+            return (Request<T>) higher;
+        }
+    }
+    
+    final static class Pure<T> extends Request<T> {
+        @Getter
+        private T t;
+
+        Pure(T t) {
+            this.t = t;
+        }
+    }
+
+    @AllArgsConstructor
+    final static class Fetch<T> extends Request<T> {
+        @Getter
+        private Service<T> service;
+    }
+    /*
+    type Requestable[A] = Coyoneda[Request, A] // this is described below
+
+    static class RequestModule {
+        static <T> Free<Coyoneda<>, T> pure(T t) {
+            Free.liftF(, Coyoneda.of(Pure::new));
+        }
+                Free.liftFC(Pure(a) : Request[A])
+
+        def fetch[A](service: Service[A]): Free[Requestable, A] =
+                Free.liftFC(Fetch(service) : Request[A])
+    }
+    */
 }
