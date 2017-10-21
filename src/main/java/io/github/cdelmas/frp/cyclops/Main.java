@@ -1,12 +1,11 @@
 package io.github.cdelmas.frp.cyclops;
 
 import cyclops.async.Future;
+import cyclops.async.adapters.Topic;
 import cyclops.collections.mutable.ListX;
 import cyclops.control.Try;
 import cyclops.function.Fn1;
-import cyclops.monads.Witness;
-import cyclops.monads.transformers.FutureT;
-import cyclops.monads.transformers.ListT;
+import cyclops.stream.ReactiveSeq;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
@@ -16,15 +15,14 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Main {
 
     public static void main(String[] args) {
-        reactive();
-        //reactiveStreams();
-
-        // Try<Future<List>>
-        AnyM.
+        //reactive();
+        reactiveStreams();
     }
 
     private static Try<ListX<String>, IOException> readFile(Path path) {
@@ -88,22 +86,27 @@ public class Main {
     }
 
     private static Future<Address> locate(String id) {
-        return Future.of(() -> {
-            System.out.println("Locating " + id);
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e1) {
-                Thread.currentThread().interrupt();
-            }
-            return new Address("Address$" + id);
-        });
+        return Future.of(() -> locateEager(id));
     }
+
+    private static Address locateEager(String id) {
+        System.out.println("Locating " + id);
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e1) {
+            Thread.currentThread().interrupt();
+        }
+        return new Address("Address$" + id);
+    }
+
 
     private static Future<Price> computePrice(String id) {
-        return Future.of(() -> {
-            System.out.println("Computing price");
-            return new Price(Long.parseLong(id) / 1000000);
-        });
+        return Future.of(() -> computePriceEager(id));
+    }
+
+    private static Price computePriceEager(String id) {
+        System.out.println("Computing price");
+        return new Price(Long.parseLong(id) / 1000000);
     }
 
     /******************************************/
@@ -112,44 +115,35 @@ public class Main {
     /******************************************/
     /******************************************/
 
-/*
+
     private static void reactiveStreams() {
         System.out.println("REACTIVE");
         ExecutorService mainEs = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         readBatchFile()
                 .forEach(content -> {
-                    ReactiveSeq<String> batches = content.stream();
-                    Topic<String> topic = batches.broadcast();
+                    ReactiveSeq<String> idStream = content.stream();
+                    Topic<String> topic = idStream.broadcast();
                     ReactiveSeq<String> notifs = topic.stream();
                     ReactiveSeq<String> process = topic.stream();
-                    ReactiveSeq<String> results = process.fanOutZipIn(
-                            seq -> seq.map(Main::locate),
-                            seq -> seq.map(Main::computeSignature),
-                            (databaseResult, wsResult) -> databaseResult.com databaseResult.concat(" ").concat(wsResult));
-
-                })
-
-
-        ReactiveSeq<Object> gn = ReactiveSeq.generate(suspend(infinitely(), s -> {
-            System.out.println("Current value: " + s.current());
-            return s.yieldAll(ListX.of("1", "2", "3", "4"));
-        }))
-                .scheduleFixedRate(5_000, newScheduledThreadPool(Runtime.getRuntime().availableProcessors()))
-                .connect(new LinkedBlockingQueue<>(15));
-
-        Topic<Object> broadcast = gn.broadcast();
-        ReactiveSeq<Object> notifs = broadcast.stream();
-        ReactiveSeq<Object> process = broadcast.stream();
-        ReactiveSeq<String> results = process.fanOutZipIn(
-                seq -> seq.map(Main::locate),
-                seq -> seq.map(Main::computeSignature),
-                (databaseResult, wsResult) -> databaseResult.concat(" ").concat(wsResult));
-
-        mainEs.submit(() -> notifs.forEach(x -> System.out.println("notif to customer for " + x)));
-        mainEs.submit(() -> results.forEach(System.out::println));
-
-        System.out.println("END OF REACTIVE");
+                    ReactiveSeq<Parcel> parcels = process.fanOutZipIn(
+                            seq -> seq.map(Main::locateEager),
+                            seq -> seq.map(Main::computePriceEager),
+                            (a, p) -> new Parcel(p,a));
+                    mainEs.submit(() -> notifs.forEach(x -> System.out.println("notif to customer for " + x)));
+                    mainEs.submit(() -> parcels.forEach(System.out::println));
+                });
     }
-    */
 
+    /* ***************************/
+    /* ***************************/
+    /* ***************************/
+    /* ***************************/
+
+    private static void integrations() {
+        // Use Vavr Try as a monad
+
+        // create a Flux from a SortedSetX
+
+        // create an Observable from a ReactiveSeq
+    }
 }
