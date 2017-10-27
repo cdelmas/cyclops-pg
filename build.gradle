@@ -25,6 +25,8 @@ ext.lombokVersion = '1.16.18'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+mainClassName=System.getProperty('mainClassName')
+
 dependencies {
     compile "org.projectlombok:lombok:${lombokVersion}"
     compile "com.aol.simplereact:cyclops-react:${cyclopsReactVersion}"
