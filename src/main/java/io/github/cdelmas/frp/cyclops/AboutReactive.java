@@ -45,7 +45,7 @@ public class AboutReactive {
 
     private Try<Path, Exception> findBatchFile() {
         return Try.withCatch(() -> {
-            URI data = Main.class.getResource("/data").toURI();
+            URI data = this.getClass().getResource("/data").toURI();
             return Paths.get(data);
         });
     }
@@ -93,7 +93,6 @@ public class AboutReactive {
         }
         return new Address("Address$" + id);
     }
-
 
     private Future<Price> computePrice(String id) {
         return Future.of(() -> computePriceEager(id));

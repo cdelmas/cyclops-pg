@@ -7,7 +7,6 @@ buildscript {
     }
 }
 
-
 apply plugin: 'java'
 apply plugin: 'application'
 
@@ -18,18 +17,15 @@ repositories {
     mavenLocal()
 }
 
-mainClassName = 'io.github.cdelmas.frp.cyclops.Main'
-
+compileJava.options.encoding = 'UTF-8'
 ext.junitPlatformVersion = '1.0.0'
 ext.junitJupiterVersion  = '5.0.0'
 ext.cyclopsReactVersion = '2.1.0'
 ext.lombokVersion = '1.16.18'
-ext.reactorNettyVersion = '0.7.0.RELEASE'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 dependencies {
-    compile "io.projectreactor.ipc:reactor-netty:${reactorNettyVersion}"
     compile "org.projectlombok:lombok:${lombokVersion}"
     compile "com.aol.simplereact:cyclops-react:${cyclopsReactVersion}"
 
