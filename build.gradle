@@ -20,8 +20,9 @@ repositories {
 compileJava.options.encoding = 'UTF-8'
 ext.junitPlatformVersion = '1.0.0'
 ext.junitJupiterVersion  = '5.0.0'
-ext.cyclopsReactVersion = '2.1.0'
+ext.cyclopsReactVersion = '2.1.1'
 ext.lombokVersion = '1.16.18'
+ext.cyclopsVersion = '9.0.0-MI7'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -30,6 +31,8 @@ mainClassName=System.getProperty('mainClassName')
 dependencies {
     compile "org.projectlombok:lombok:${lombokVersion}"
     compile "com.aol.simplereact:cyclops-react:${cyclopsReactVersion}"
+    compile "com.aol.cyclops:cyclops-rxjava2:${cyclopsVersion}"
+    compile "com.aol.cyclops:cyclops-vavr:${cyclopsVersion}"
 
     testCompile "org.junit.jupiter:junit-jupiter-api:${junitJupiterVersion}"
     testRuntime "org.junit.jupiter:junit-jupiter-engine:${junitJupiterVersion}"
