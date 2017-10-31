@@ -10,6 +10,7 @@ import com.aol.cyclops2.types.anyM.AnyMValue;
 import cyclops.async.Future;
 import cyclops.companion.vavr.Arrays;
 import cyclops.control.Maybe;
+import cyclops.function.Fn1;
 import cyclops.monads.AnyM;
 import cyclops.monads.Vavr;
 import cyclops.monads.VavrWitness;
@@ -17,7 +18,6 @@ import cyclops.monads.Witness;
 import cyclops.monads.WitnessType;
 import cyclops.typeclasses.Kleisli;
 import cyclops.typeclasses.monad.Monad;
-import cyclops.typeclasses.monad.MonadPlus;
 import cyclops.typeclasses.monad.MonadZero;
 import io.vavr.collection.Array;
 import lombok.Value;
@@ -65,9 +65,9 @@ public class AboutHkt {
     // AnyM
 
     private void anyM() {
-        AnyMService<Witness.future, VavrWitness.array> service = new AnyMService<>();
+        AnyMService<Integer, Witness.future, VavrWitness.array> service = new AnyMService<>();
         service.repository = new AnyMAsyncRepo();
-        service.compute().forEach(a -> System.out.println("Computed " + a));
+        service.compute(λ(Integer::sum).apply(42)).forEach(a -> System.out.println("Computed " + a));
     }
 
     interface AnyMRepository<A, W extends WitnessType<W>, C extends WitnessType<C>> {
@@ -77,14 +77,13 @@ public class AboutHkt {
         AnyMValue<W, AnyMSeq<C, A>> readAll();
     }
 
-    private class AnyMService<W extends WitnessType<W>, C extends WitnessType<C>> {
+    private class AnyMService<A, W extends WitnessType<W>, C extends WitnessType<C>> {
 
-        AnyMRepository<Integer, W, C> repository;
+        AnyMRepository<A, W, C> repository;
 
-        AnyMValue<W, AnyMSeq<C, Integer>> compute() {
+        AnyMValue<W, AnyMSeq<C, A>> compute(Fn1<A, A> mapper) {
             return repository.readAll()
-                    .map(integers -> integers.map(λ(Integer::sum).apply(42)))
-                    .map(integers -> integers.filter(x -> x % 2 == 1));
+                    .map(as -> as.map(mapper));
         }
     }
 
@@ -104,13 +103,12 @@ public class AboutHkt {
     // Higher
 
     private void higher() {
-        Service<Witness.future, VavrWitness.array> service = new Service<>();
+        Service<Integer, Witness.future, VavrWitness.array> service = new Service<>();
         service.cMonadZero = Arrays.Instances.monadZero();
-        service.cMonadPlus = Arrays.Instances.monadPlus();
         service.wMonad = Future.Instances.monad();
         service.repository = new AsyncRepo();
 
-        final Future<Higher<VavrWitness.array, Integer>> computedValue = Future.narrowK(service.compute());
+        final Future<Higher<VavrWitness.array, Integer>> computedValue = Future.narrowK(service.compute(λ(Integer::sum).apply(42)));
         computedValue.forEach(a -> System.out.println("Computed: " + ArrayKind.narrow(a)));
     }
 
@@ -121,28 +119,17 @@ public class AboutHkt {
         Higher<W, Higher<C, A>> readAll();
     }
 
-    private class Service<W extends WitnessType<W>, C extends WitnessType<C>> {
+    private class Service<A, W extends WitnessType<W>, C extends WitnessType<C>> {
 
-        Repository<Integer, W, C> repository;
+        Repository<A, W, C> repository;
         Monad<W> wMonad;
         MonadZero<C> cMonadZero;
-        MonadPlus<C> cMonadPlus;
 
-        Higher<W, Higher<C, Integer>> compute() {
-            final Higher<W, Higher<C, Integer>> allValues = repository.readAll();
-            System.out.println("all values: " + allValues);
+        Higher<W, Higher<C, A>> compute(Fn1<A, A> mapper) {
             return wMonad.map(
-                    integers -> {
-                        final Higher<C, Integer> mapped = cMonadZero.map(λ(Integer::sum).apply(42),
-                                integers);
-                        System.out.println("After map: " + mapped);
-                        final Higher<C, Integer> filtered = cMonadPlus.filter(x -> x % 2 == 1, mapped);
-                        System.out.println("After filter and map with MonadPlus: " + filtered);
-                        final Higher<C, Integer> list = cMonadZero.filter(x -> x % 2 == 1, mapped);
-                        System.out.println("After filter and map with MonadZero: " + list);
-                        return list;
-                    },
-                    allValues);
+                    integers -> cMonadZero.map(mapper, integers),
+                    repository.readAll()
+            );
         }
     }
 
