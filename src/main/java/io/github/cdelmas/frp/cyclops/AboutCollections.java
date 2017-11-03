@@ -23,15 +23,6 @@ public class AboutCollections {
                 i      -> ListX.range(0, i),
                 (i, j) -> i.toString() + "#" + j.toString()
         ).forEach(System.out::println);
-        /*
-          Scala equivalent
-
-          for {
-            i <- ints
-            j <- 0 to i
-          } yield (i.toString ++ "#" ++ j.toString)
-
-         */
 
         ints.visit((i, __) -> i, () -> 42); // head
     }

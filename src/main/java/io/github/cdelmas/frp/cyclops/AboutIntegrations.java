@@ -41,7 +41,8 @@ public class AboutIntegrations {
         // cyclops -> rxjava
         final Stream<Integer> infinite = Stream.generate(() -> 42);
 
-        final ReactiveSeq<Integer> asyncNo = Spouts.async(infinite, Executors.newFixedThreadPool(3));
+        final ReactiveSeq<Integer> asyncNo = Spouts.async(
+                infinite, Executors.newFixedThreadPool(3));
 
         final Double result = Observables.fromStream(asyncNo)
                 .map(x -> x * 0.3230284)

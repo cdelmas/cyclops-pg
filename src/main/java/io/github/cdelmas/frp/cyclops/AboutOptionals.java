@@ -25,20 +25,13 @@ public class AboutOptionals {
         System.out.println("Sequence");
         sequence.ifPresent(System.out::println);
 
-        int l = cyclops.companion.Optionals.visit(Optional.of("AERT"),
+        int l = Optionals.visit(Optional.of("AERT"),
                 String::length,
                 () -> 42);
-        /*
-            Scala equivalent
-            Some("AERT") match {
-              case Some(s) => s.length
-              case _ => 42
-            }
-        */
 
         Optional<String> s1 = Optional.of("Rest");
         Optional<String> s2 = Optional.of("Best");
-        Optional<String> combined = cyclops.companion.Optionals.combine(s1, s2, Monoids.stringConcat);
+        Optional<String> combined = Optionals.combine(s1, s2, Monoids.stringConcat);
         combined.ifPresent(System.out::println);
     }
 }

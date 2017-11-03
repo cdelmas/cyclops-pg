@@ -10,12 +10,17 @@ import java.util.concurrent.Executors;
 
 import static java.lang.System.out;
 
+import com.aol.cyclops2.hkt.Higher;
 import cyclops.async.Future;
 import cyclops.async.adapters.Topic;
 import cyclops.collections.mutable.ListX;
 import cyclops.control.Try;
 import cyclops.function.Fn1;
+import cyclops.monads.AnyM;
+import cyclops.monads.Witness;
+import cyclops.monads.transformers.ListT;
 import cyclops.stream.ReactiveSeq;
+import cyclops.typeclasses.Comprehensions;
 import lombok.Value;
 
 public class AboutReactive {
@@ -26,16 +31,19 @@ public class AboutReactive {
         new AboutReactive().reactiveStreams();
     }
 
+    private void reactive() {
+       readBatchFile()
+                .map(lines -> lines.map(line -> process.apply(line)))
+                .map(Future::sequence)
+                .forEach(f ->
+                        f.forEach(ps ->
+                                ps.forEach(p ->
+                                        out.println("Processed " + p))));
+    }
+
     private Try<ListX<String>, IOException> readFile(Path path) {
         return Try.withCatch(() -> Files.readAllLines(path))
                 .map(ListX::fromIterable);
-    }
-
-    private void reactive() {
-        readBatchFile()
-                .map(lines -> lines.map(line -> process.apply(line)))
-                .map(Future::sequence)
-                .forEach(f -> f.forEach(ps -> ps.forEach(p -> out.println("Processed " + p))));
     }
 
     private Try<ListX<String>, Exception> readBatchFile() {
@@ -52,16 +60,17 @@ public class AboutReactive {
 
     private Fn1<String, Future<Parcel>> process = input -> {
 
-//        return Future.narrowK(Comprehensions.of(Future.Instances.monad())
-//                .forEach2(
-//                                  locate(input),
-//                        __     -> computePrice(input),
-//                        (a, p) -> new Parcel(p, a)));
+         return Future.narrowK(Comprehensions.of(Future.Instances.monad())
+                .forEach2(
+                                  locate(input),
+                        __     -> computePrice(input),
+                        (a, p) -> new Parcel(p, a)));
 
-        /* **** OU ********/
-        Future<Price> price = computePrice(input);
-        Future<Address> address = locate(input);
-        return price.flatMap(p -> address.map(a -> new Parcel(p, a)));
+        /* **** OU
+        return computePrice(input)
+                .flatMap(p -> locate(input)
+                        .map(a -> new Parcel(p, a)));
+        *******/
     };
 
     @Value

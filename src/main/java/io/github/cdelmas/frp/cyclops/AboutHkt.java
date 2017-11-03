@@ -1,8 +1,5 @@
 package io.github.cdelmas.frp.cyclops;
 
-import static cyclops.control.Maybe.just;
-import static cyclops.function.Lambda.λ;
-
 import com.aol.cyclops.vavr.hkt.ArrayKind;
 import com.aol.cyclops2.hkt.Higher;
 import com.aol.cyclops2.types.anyM.AnyMSeq;
@@ -22,6 +19,9 @@ import cyclops.typeclasses.monad.MonadZero;
 import io.vavr.collection.Array;
 import lombok.Value;
 
+import static cyclops.control.Maybe.just;
+import static cyclops.function.Lambda.λ;
+
 public class AboutHkt {
 
     public static void main(String[] args) {
@@ -36,19 +36,25 @@ public class AboutHkt {
     // kleisli
 
     private void kleisli() {
-        Kleisli<Witness.maybe, String, Address> k2 = Kleisli.of(Maybe.Instances.monad(), this::findAddress);
-        Kleisli<Witness.maybe, Address, Parcel> k1 = Kleisli.of(Maybe.Instances.monad(), this::sendParcel);
+        Kleisli<Witness.maybe, String, Address> k2 = Kleisli.of(
+                Maybe.Instances.monad(),
+                this::findAddress);
+        Kleisli<Witness.maybe, Address, Parcel> k1 = Kleisli.of(
+                Maybe.Instances.monad(),
+                this::sendParcel);
         Maybe<Parcel> maybeAParcel = Maybe.narrowK(k2.then(k1).apply("Toto"));
         maybeAParcel.forEach(System.out::println);
     }
 
     // String -> Maybe Address
     private Maybe<Address> findAddress(String name) {
+
         return just(new Address(name + "@ 1337 n00b Road, Geek City"));
     }
 
     // :: Address -> Maybe Parcel
     private Maybe<Parcel> sendParcel(Address address) {
+
         return just(new Parcel(address));
     }
 
@@ -67,7 +73,8 @@ public class AboutHkt {
     private void anyM() {
         AnyMService<Integer, Witness.future, VavrWitness.array> service = new AnyMService<>();
         service.repository = new AnyMAsyncRepo();
-        service.compute(λ(Integer::sum).apply(42)).forEach(a -> System.out.println("Computed " + a));
+        service.compute(λ(Integer::sum).apply(42))
+                .forEach(a -> System.out.println("Computed " + a));
     }
 
     interface AnyMRepository<A, W extends WitnessType<W>, C extends WitnessType<C>> {
@@ -91,6 +98,7 @@ public class AboutHkt {
 
         @Override
         public AnyMValue<Witness.future, Integer> read() {
+
             return AnyM.fromFuture(Future.ofResult(42));
         }
 
@@ -108,8 +116,10 @@ public class AboutHkt {
         service.wMonad = Future.Instances.monad();
         service.repository = new AsyncRepo();
 
-        final Future<Higher<VavrWitness.array, Integer>> computedValue = Future.narrowK(service.compute(λ(Integer::sum).apply(42)));
-        computedValue.forEach(a -> System.out.println("Computed: " + ArrayKind.narrow(a)));
+        final Future<Higher<VavrWitness.array, Integer>> computedValue = Future.narrowK(
+                service.compute(λ(Integer::sum).apply(42)));
+        computedValue.forEach(a ->
+                System.out.println("Computed: " + ArrayKind.narrow(a)));
     }
 
     interface Repository<A, W extends WitnessType<W>, C extends WitnessType<C>> {
@@ -137,6 +147,7 @@ public class AboutHkt {
 
         @Override
         public Higher<Witness.future, Integer> read() {
+
             return Future.ofResult(42);
         }
 

@@ -25,14 +25,14 @@ public class AboutMonads {
 
     private void xor() {
         Xor<String, Integer> xor = Xor.primary(42);
-        xor.map(i -> Integer.divideUnsigned(5, i)).forEach(System.out::println);
-        //xor.map(λ(Integer::divideUnsigned).apply(5)).forEach(System.out::println);
+        xor.map(i -> Integer.divideUnsigned(5, i))
+                .forEach(System.out::println);
     }
 
     private void either() {
         Either<String, Integer> iOrS = Either.rightEval(Eval.later(() -> 42));
-        iOrS.map(i -> i + 12).forEach(System.out::println);
-        // iOrS.map(λ(Integer::sum).apply(12)).forEach(System.out::println);
+        iOrS.map(i -> i + 12)
+                .forEach(System.out::println);
     }
 
     private void eval() {

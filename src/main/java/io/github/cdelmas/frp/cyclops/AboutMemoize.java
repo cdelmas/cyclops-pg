@@ -4,6 +4,8 @@ import java.util.Arrays;
 
 import cyclops.function.Fn1;
 
+import static cyclops.function.Memoize.memoizeFunction;
+
 public class AboutMemoize {
 
     public static void main(String[] args) {
@@ -24,7 +26,7 @@ public class AboutMemoize {
         System.out.println("Result obtained within " + (System.currentTimeMillis() - start) + " ms: " + Arrays.asList(x1, x2));
     }
 
-    private Fn1<Long, Long> mFibo = cyclops.function.Memoize.memoizeFunction(this::fibo);
+    private Fn1<Long, Long> mFibo = memoizeFunction(this::fibo);
 
     private long fibo(long n) {
         int m = 1;
