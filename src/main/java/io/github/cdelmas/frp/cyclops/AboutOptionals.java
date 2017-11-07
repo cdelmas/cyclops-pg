@@ -21,13 +21,6 @@ public class AboutOptionals {
         System.out.println("Accumulate");
         result.ifPresent(System.out::println);
 
-        Optional<ListX<String>> sequence = Optionals.sequencePresent(opts);
-        System.out.println("Sequence");
-        sequence.ifPresent(System.out::println);
-
-        int l = Optionals.visit(Optional.of("AERT"),
-                String::length,
-                () -> 42);
 
         Optional<String> s1 = Optional.of("Rest");
         Optional<String> s2 = Optional.of("Best");

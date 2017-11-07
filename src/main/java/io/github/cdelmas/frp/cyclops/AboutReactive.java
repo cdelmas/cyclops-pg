@@ -41,21 +41,9 @@ public class AboutReactive {
                                         out.println("Processed " + p))));
     }
 
-    private Try<ListX<String>, IOException> readFile(Path path) {
-        return Try.withCatch(() -> Files.readAllLines(path))
-                .map(ListX::fromIterable);
-    }
-
     private Try<ListX<String>, Exception> readBatchFile() {
         return findBatchFile()
                 .flatMap(this::readFile);
-    }
-
-    private Try<Path, Exception> findBatchFile() {
-        return Try.withCatch(() -> {
-            URI data = this.getClass().getResource("/data").toURI();
-            return Paths.get(data);
-        });
     }
 
     private Fn1<String, Future<Parcel>> process = input -> {
@@ -73,22 +61,49 @@ public class AboutReactive {
         *******/
     };
 
+    /**
+     *                       - [notifs]
+     *                     /
+     *    [content]>topic>+
+     *                    \            /- locate() -----\
+     *                     - [process]+                  + - > System.out
+     *                                \                  |
+     *                                 - computePrice() /
+     */
+    private void reactiveStreams() {
+        out.println("REACTIVE STREAMS");
+        ExecutorService mainEs = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        readBatchFile()
+                .forEach(content -> {
+                    ReactiveSeq<String> idStream = content.stream();
+                    Topic<String> topic = idStream.broadcast();
+                    ReactiveSeq<String> notifs = topic.stream();
+                    ReactiveSeq<String> process = topic.stream();
+                    ReactiveSeq<Parcel> parcels = process.fanOutZipIn(
+                            seq -> seq.map(this::locateEager),
+                            seq -> seq.map(this::computePriceEager),
+                            (a, p) -> new Parcel(p, a));
+                    mainEs.submit(() -> notifs.forEach(x -> out.println("notif to customer for " + x)));
+                    mainEs.submit(() -> parcels.forEach(out::println));
+                });
+    }
+
     @Value
     private static class Parcel {
+
         Price price;
         Address address;
     }
-
     @Value
     private static class Price {
+
         long price;
     }
-
     @Value
     private static class Address {
+
         String address;
     }
-
     private Future<Address> locate(String id) {
         return Future.of(() -> locateEager(id));
     }
@@ -112,21 +127,15 @@ public class AboutReactive {
         return new Price(Long.parseLong(id) / 1000000);
     }
 
-    private void reactiveStreams() {
-        out.println("REACTIVE STREAMS");
-        ExecutorService mainEs = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        readBatchFile()
-                .forEach(content -> {
-                    ReactiveSeq<String> idStream = content.stream();
-                    Topic<String> topic = idStream.broadcast();
-                    ReactiveSeq<String> notifs = topic.stream();
-                    ReactiveSeq<String> process = topic.stream();
-                    ReactiveSeq<Parcel> parcels = process.fanOutZipIn(
-                            seq -> seq.map(this::locateEager),
-                            seq -> seq.map(this::computePriceEager),
-                            (a, p) -> new Parcel(p, a));
-                    mainEs.submit(() -> notifs.forEach(x -> out.println("notif to customer for " + x)));
-                    mainEs.submit(() -> parcels.forEach(out::println));
-                });
+    private Try<ListX<String>, IOException> readFile(Path path) {
+        return Try.withCatch(() -> Files.readAllLines(path))
+                .map(ListX::fromIterable);
+    }
+
+    private Try<Path, Exception> findBatchFile() {
+        return Try.withCatch(() -> {
+            URI data = this.getClass().getResource("/data").toURI();
+            return Paths.get(data);
+        });
     }
 }

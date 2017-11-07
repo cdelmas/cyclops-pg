@@ -9,6 +9,7 @@ import cyclops.function.Fn2;
 import cyclops.function.Lambda;
 import lombok.val;
 
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static com.aol.cyclops2.types.mixins.AsMappable.asMappable;
@@ -27,11 +28,9 @@ public class AboutFunctions {
                 .map(i -> Integer.sum(i, 3))
                 .forEach(i -> System.out.println(i));
 
-        Function<Integer,Integer> sumJ = λ(Integer::sum).apply(4);
-        // sumJ.
+        BiFunction<Integer,Integer,Integer> sumJ = λ(Integer::sum);
 
-        Fn1<Integer, Integer> sum = λ(Integer::sum).apply(4);
-        // sum.
+        Fn2<Integer, Integer, Integer> sum = λ(Integer::sum);
     }
 
     private void fluent() {

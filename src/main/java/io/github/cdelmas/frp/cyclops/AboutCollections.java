@@ -22,7 +22,8 @@ public class AboutCollections {
         ints.forEach2(
                 i      -> ListX.range(0, i),
                 (i, j) -> i.toString() + "#" + j.toString()
-        ).forEach(System.out::println);
+        )
+        .forEach(System.out::println);
 
         ints.visit((i, __) -> i, () -> 42); // head
     }

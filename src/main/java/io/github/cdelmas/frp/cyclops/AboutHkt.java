@@ -77,18 +77,18 @@ public class AboutHkt {
                 .forEach(a -> System.out.println("Computed " + a));
     }
 
-    interface AnyMRepository<A, W extends WitnessType<W>, C extends WitnessType<C>> {
+    interface AnyMRepository<A, F extends WitnessType<F>, C extends WitnessType<C>> {
 
-        AnyMValue<W, A> read();
+        AnyMValue<F, A> read();
 
-        AnyMValue<W, AnyMSeq<C, A>> readAll();
+        AnyMValue<F, AnyMSeq<C, A>> readAll();
     }
 
-    private class AnyMService<A, W extends WitnessType<W>, C extends WitnessType<C>> {
+    private class AnyMService<A, F extends WitnessType<F>, C extends WitnessType<C>> {
 
-        AnyMRepository<A, W, C> repository;
+        AnyMRepository<A, F, C> repository;
 
-        AnyMValue<W, AnyMSeq<C, A>> compute(Fn1<A, A> mapper) {
+        AnyMValue<F, AnyMSeq<C, A>> compute(Fn1<A, A> mapper) {
             return repository.readAll()
                     .map(as -> as.map(mapper));
         }
@@ -122,20 +122,20 @@ public class AboutHkt {
                 System.out.println("Computed: " + ArrayKind.narrow(a)));
     }
 
-    interface Repository<A, W extends WitnessType<W>, C extends WitnessType<C>> {
+    interface Repository<A, F extends WitnessType<F>, C extends WitnessType<C>> {
 
-        Higher<W, A> read();
+        Higher<F, A> read();
 
-        Higher<W, Higher<C, A>> readAll();
+        Higher<F, Higher<C, A>> readAll();
     }
 
-    private class Service<A, W extends WitnessType<W>, C extends WitnessType<C>> {
+    private class Service<A, F extends WitnessType<F>, C extends WitnessType<C>> {
 
-        Repository<A, W, C> repository;
-        Monad<W> wMonad;
+        Repository<A, F, C> repository;
+        Monad<F> wMonad;
         MonadZero<C> cMonadZero;
 
-        Higher<W, Higher<C, A>> compute(Fn1<A, A> mapper) {
+        Higher<F, Higher<C, A>> compute(Fn1<A, A> mapper) {
             return wMonad.map(
                     integers -> cMonadZero.map(mapper, integers),
                     repository.readAll()
