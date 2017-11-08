@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static cyclops.function.Lambda.λ;
 import static java.lang.System.out;
 
 import com.aol.cyclops2.hkt.Higher;
@@ -16,6 +17,7 @@ import cyclops.async.adapters.Topic;
 import cyclops.collections.mutable.ListX;
 import cyclops.control.Try;
 import cyclops.function.Fn1;
+import cyclops.function.Lambda;
 import cyclops.monads.AnyM;
 import cyclops.monads.Witness;
 import cyclops.monads.transformers.ListT;
@@ -33,7 +35,7 @@ public class AboutReactive {
 
     private void reactive() {
        readBatchFile()
-                .map(lines -> lines.map(line -> process.apply(line)))
+                .map(txs -> txs.map(txId -> process.apply(txId)))
                 .map(Future::sequence)
                 .forEach(f ->
                         f.forEach(ps ->
@@ -46,13 +48,15 @@ public class AboutReactive {
                 .flatMap(this::readFile);
     }
 
-    private Fn1<String, Future<Parcel>> process = input -> {
+    private Fn1<String, Future<Parcel>> process = txId -> {
 
-         return Future.narrowK(Comprehensions.of(Future.Instances.monad())
+        return Future.narrowK(Comprehensions.of(Future.Instances.monad())
                 .forEach2(
-                                  locate(input),
-                        __     -> computePrice(input),
+                                  locate(txId),
+                        __     -> computePrice(txId),
                         (a, p) -> new Parcel(p, a)));
+
+
 
         /* **** OU
         return computePrice(input)
